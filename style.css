@@ -12,7 +12,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
+@font-face{
+	font-family: "AHS";
+	src: url("fonts/american-horror-story_font/AmericanHorrorStory.otf")
+}
+h2{
+	font-family: "AHS";
+	color:white;
+	text-shadow:red 2px 2px 1px;
+}
 a {
   font-weight: 500;
   color: #646cff;
@@ -94,3 +102,23 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+.contentBlock{
+	display:flex;
+	position:absolute;
+	justify-content:center;
+	width:100%;
+	align-items:center;
+	flex-direction:column;
+	flex-wrap:wrap;
+}
+.yes{
+	position:relative;
+	border: 2px solid white;
+	border-radius:4px;
+	color:white;
+	padding:5px;
+	text-align:center;
+	white-space: nowrap;
+	width:30vw;
+}
+

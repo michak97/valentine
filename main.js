@@ -1,82 +1,113 @@
 import './style.css'
+import * as TWEEN from 'tween'
 import * as THREE from 'three'
+import jQuery from "jquery"
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+window.$ = window.jQuery = jQuery;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild( renderer.domElement );
-const color = 0xFFFFFF
-const intensity = 0.75
-const light = new THREE.PointLight(color, intensity)
-light.position.set(-15, -10, 30)
-scene.add(light)
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+let firstLight;
+let secondLight;
+let thirdLight;
+let heartMesh;
+const loader = new THREE.TextureLoader();
+document.body.appendChild(renderer.domElement);
 
-const vertices = [
-	new THREE.Vector3(0,0,0),
-	new THREE.Vector3(0, 5, -1.5),
-	new THREE.Vector3(5, 5, 0), // point A
-      new THREE.Vector3(9, 9, 0),
-      new THREE.Vector3(5, 9, 2),
-      new THREE.Vector3(7, 13, 0),
-      new THREE.Vector3(3, 13, 0),
-      new THREE.Vector3(0, 11, 0),
-      new THREE.Vector3(5, 9, -2),
-      new THREE.Vector3(0, 8, -3),
-      new THREE.Vector3(0, 8, 3),
-      new THREE.Vector3(0, 5, 1.5), // point B
-      new THREE.Vector3(-9, 9, 0),
-      new THREE.Vector3(-5, 5, 0),
-      new THREE.Vector3(-5, 9, -2),
-      new THREE.Vector3(-5, 9, 2),
-      new THREE.Vector3(-7, 13, 0),
-      new THREE.Vector3(-3, 13, 0),
-     ];
-     const trianglesIndexes = [
-     // face 1
-      2,11,0, // This represents the 3 points A,B,C which compose the first triangle
-      2,3,4,
-      5,4,3,
-      4,5,6,
-      4,6,7,
-      4,7,10,
-      4,10,11,
-      4,11,2,
-      0,11,13,
-      12,13,15,
-      12,15,16,
-      16,15,17,
-      17,15,7,
-      7,15,10,
-      11,10,15,
-      13,11,15,
-     // face 2
-      0,1,2,
-      1,9,2,
-      9,8,2,
-      5,3,8,
-      8,3,2,
-      6,5,8,
-      7,6,8,
-      9,7,8,
-      14,17,7,
-      14,7,9,
-      14,9,1,
-      9,1,13,
-      1,0,13,
-      14,1,13,
-      16,14,12,
-      16,17,14,
-      12,14,13
-]
-const geo = new THREE.BufferGeometry()
-for(let i in trianglesIndexes){
-	if((i+1)%3 === 0){
-		geo.vertices.push(coordinatesList[trianglesIndexes[i-2]], coordinatesList[trianglesIndexes[i-1]], coordinatesList[trianglesIndexes[i]]);
-		geo.faces.push(new THREE.Face3(i-2, i-1, i))
-	}
+function init() {
+	scene.background = new THREE.Color('black');
+	camera.position.set(0,10,15);
+	camera.lookAt(0,10,0)
 }
-geo.computeVertexNormals()
-const material = new THREE.MeshPhongMaterial({color:0xad0c00})
-const heartMesh = new THREE.Mesh(geo, material)
+
+function setLight(){
+	const hemiLight = new THREE.HemisphereLight (0xffffff, 0x8d8d8d, 1);
+	hemiLight.position.set(0,0,1);
+	scene.add(hemiLight);
+	firstLight = new THREE.DirectionalLight(0xFFFFFF, 2);
+	firstLight.position.set(-10,10,15);
+	firstLight.castShadow=true;
+	firstLight.shadow.camera.top=50;
+	firstLight.shadow.camera.bottom=-20;
+	firstLight.shadow.camera.left=-20;
+	firstLight.shadow.camera.right=20;
+	firstLight.shadow.camera.near=10;
+	firstLight.shadow.camera.far=300;
+	scene.add(firstLight);
+}
+
+function addCube(){
+	const cubeGeometry = new THREE.BoxGeometry(1,1,1);
+	const material = new THREE.MeshPhongMaterial({color:0x00ff00});
+	const cube = new THREE.Mesh( cubeGeometry, material );
+	cube.castShadow=true;
+	cube.receiveShadow=false;
+	scene.add(cube);
+}
+
+function addBackground(){
+	const planeGeometry = new THREE.PlaneGeometry(10000,10000);
+	loader.load('textures/painted_plaster_wall_diff_4k.jpg');
+	const planeMaterial = new THREE.MeshPhongMaterial({
+			color:0xFFFFFF,
+			side: THREE.DoubleSide,
+	});
+	const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+	plane.position.z=-2;
+	plane.receiveShadow=true;
+	plane.castShadow=false;
+	scene.add(plane);
+}
+
+function addGround(){
+	const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(100,100), new THREE.MeshPhongMaterial({color:0xFFFFFF, depthWrite:false, side:THREE.DoubleSide}));
+	groundMesh.receiveShadow=true;
+	groundMesh.rotation.x=-Math.PI/2;
+	scene.add(groundMesh);
+
+}
+
+function loadGLTF(){
+	let heartLoader = new GLTFLoader();
+	const standardMaterial = new THREE.MeshPhongMaterial({
+		color:0xFF0000,
+	})
+	heartLoader.load('models/heart.gltf', (gltf) => {
+		const heartMesh = gltf.scene;
+		heartMesh.position.x = 0;
+		heartMesh.position.y = 1;
+		heartMesh.position.z = 0;
+		heartMesh.traverse((o) => {
+			if(o.isMesh){
+				o.material = standardMaterial;
+				o.castShadow = true;
+				o.receiveShadow = false;
+			}
+		});
+	scene.add(heartMesh);
+	new TWEEN.Tween(heartMesh.rotation)
+		.to({y: "-"+(Math.PI)*6}, 6000)
+		.start(),
+	new TWEEN.Tween(heartMesh.position)
+		.to({y:15}, 6000)
+		.start()		
+	})
+}
+function animate(){
+	requestAnimationFrame(animate);
+	renderer.render(scene, camera);
+	TWEEN.update();
+}
+
+
+
+
+init();
+setLight();
+addBackground();
+$.when(loadGLTF()).then(animate());
